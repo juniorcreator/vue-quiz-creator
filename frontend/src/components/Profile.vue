@@ -60,7 +60,7 @@ const uploadAvatar = async () => {
       const result = await res.json();
       await updateAvatar(result.url);
     } else {
-      console.error('error file uploading:', res.status);
+      console.error('error file uploading:', res.status, res);
     }
   } catch (err) {
     loading.value = false;

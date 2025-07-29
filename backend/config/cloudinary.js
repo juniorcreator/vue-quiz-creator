@@ -1,13 +1,11 @@
 import { v2 as cloudinary } from 'cloudinary';
-import dotenv from 'dotenv';
 import multer from 'multer';
-
-dotenv.config();
+import { API_KEY, CLOUD_NAME, API_SECRET } from './env.js';
 
 cloudinary.config({
-  cloud_name: 'dbad5t3xh',
-  api_key: '988765737452548',
-  api_secret: 'yL7M4hFbR1hk_8LEYKAnAFUQIYA',
+  cloud_name: CLOUD_NAME,
+  api_key: API_KEY,
+  api_secret: API_SECRET,
 });
 
 // Multer: saving in computer RAM
