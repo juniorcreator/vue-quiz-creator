@@ -3,11 +3,12 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { PORT } from './config/env.js';
 import connectToDatabase from './database/mongodb.js';
-import authRouter from './routes/auth-routes.js';
 import errorMiddleware from './middleware/error.middleware.js';
 import authorize from './middleware/auth.middleware.js';
 import { getProfile } from './controllers/auth.controller.js';
+import authRouter from './routes/auth-routes.js';
 import quizRouter from './routes/quiz-routes.js';
+import avatarRouter from './routes/avatar-routes.js';
 dotenv.config();
 
 const app = express();
@@ -25,6 +26,8 @@ app.get('/', (req, res) => {
 });
 app.use('/auth', authRouter);
 app.use('/quiz', quizRouter);
+app.use('/avatar', avatarRouter);
+
 app.get('/profile', authorize, getProfile);
 
 app.use(errorMiddleware);

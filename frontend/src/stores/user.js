@@ -8,5 +8,11 @@ export const useUserStore = defineStore('user', () => {
   const setUser = (value) => {
     user.value = value;
   };
-  return { theme, setUser, user };
+  const setQuizzes = (val) => {
+    user.value.quizzes = val;
+  };
+  const setAvatar = (url) => {
+    user.value.avatar = url;
+  };
+  return { theme, setUser, setQuizzes, setAvatar, user };
 });

@@ -36,6 +36,7 @@ const handleSubmit = async () => {
       },
     });
     const data = await res.json();
+    console.log(data, ' login');
 
     if (!data.success) {
       error.value = data.error;

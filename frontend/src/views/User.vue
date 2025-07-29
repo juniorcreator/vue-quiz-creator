@@ -3,9 +3,11 @@ import { checkIsValidToken, linkClass } from '@/utils/index.js';
 import { RouterLink, useRouter } from 'vue-router';
 import { onBeforeMount } from 'vue';
 import { useUserStore } from '@/stores/user.js';
+import Profile from '@/components/Profile.vue';
 import { ref } from 'vue';
 
 const loading = ref(false);
+const error = ref('');
 const showQuizCreating = ref(false);
 const quiz = ref({
   title: '',
@@ -20,16 +22,11 @@ const quiz = ref({
   ],
 });
 const store = useUserStore();
-const router = useRouter();
 
 onBeforeMount(async () => {
   await checkIsValidToken(loading);
 });
 
-const logout = () => {
-  localStorage.removeItem('quiz-user-token');
-  router.push('/login');
-};
 const addQuestion = () => {
   quiz.value.questions.push({
     id: Date.now(), // уникальный ID
@@ -65,7 +62,7 @@ const resetQuizForm = () => {
   };
 };
 
-const handleSubmit = async () => {
+const handleCreateQuiz = async () => {
   const isValid =
     quiz.value.title.trim() &&
     quiz.value.questions.every(
@@ -84,9 +81,9 @@ const handleSubmit = async () => {
 
   console.log('Готовый квиз:', quiz.value);
 
-  // TODO: Отправить на сервер, например:
   try {
-    const res = await fetch('http://localhost:3000/quiz/add', {
+    error.value = '';
+    const res = await fetch('http://localhost:3000/quiz', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -103,14 +100,37 @@ const handleSubmit = async () => {
   } catch (e) {
     console.error(e);
   }
-  // await fetch('/api/quizzes', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(quiz.value),
-  // });
 
   alert('Квиз создан!');
   resetQuizForm();
+};
+const handleRemoveQuiz = async (id) => {
+  console.log(id, ' id of quiz');
+
+  try {
+    const res = await fetch(`http://localhost:3000/quiz/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: store.user._id,
+        quizId: id,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      error.value = data.message;
+      console.log(data, ' data delete quiz');
+      return;
+    }
+
+    store.setQuizzes(data.quizzes);
+  } catch (e) {
+    console.error(e);
+  }
 };
 </script>
 
@@ -120,28 +140,12 @@ const handleSubmit = async () => {
     <div class="text-center">
       <RouterLink :class="linkClass" to="/">go to home page</RouterLink>
     </div>
-    <div class="flex justify-end p-2">
-      <div
-        class="rounded-full cursor-pointer bg-violet-700 hover:bg-violet-300 h-15 w-15 border flex items-center justify-center"
-      >
-        <p class="text-sm">Profile</p>
-      </div>
-      <div class="text-center mt-4 ml-3">
-        <button
-          @click="logout"
-          class="text-rose-400 font-bold cursor-pointer hover:text-rose-700 text-xs"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
+
+    <Profile />
 
     <div class="quizzez">
       <div class="text-center" v-if="!store.user.quizzes.length">
         <p>no quizzes 😔</p>
-        <button v-if="!showQuizCreating" @click="showQuizCreating = true" :class="linkClass">
-          create quiz➕
-        </button>
       </div>
       <ul v-else class="p-3 flex flex-wrap items-center justify-center mx-3">
         <li
@@ -151,12 +155,16 @@ const handleSubmit = async () => {
         >
           <div class="text-center">
             Name: {{ userQuiz.title }}
-            <div class="py-1 px-2 mt-1 cursor-pointer text-white text-xs border rounded">
-              <RouterLink :to="`/profile/quiz/${quizIndex}`">start quiz →</RouterLink>
+            <div class="mt-1 cursor-pointer text-white text-xs border rounded">
+              <RouterLink class="block py-1" :to="`/profile/quiz/${quizIndex}`"
+                >start quiz →</RouterLink
+              >
             </div>
+            <button @click="handleRemoveQuiz(userQuiz._id)" class="cursor-pointer">🗑️</button>
           </div>
         </li>
       </ul>
+      <div v-if="error" class="text-red-500 mb-0 text-center">error: {{ error }}</div>
       <div class="text-center mt-4">
         <button v-if="!showQuizCreating" @click="showQuizCreating = true" :class="linkClass">
           create quiz➕
@@ -165,7 +173,7 @@ const handleSubmit = async () => {
     </div>
     <div class="px-3 mt-5" v-if="showQuizCreating">
       <form
-        @submit.prevent="handleSubmit"
+        @submit.prevent="handleCreateQuiz"
         class="max-w-123 mx-auto p-4 bg-white rounded-lg shadow space-y-4 text-sm"
       >
         <div>
@@ -183,7 +191,7 @@ const handleSubmit = async () => {
           <textarea v-model="quiz.description" rows="2" class="w-full border px-3 py-1 rounded" />
         </div>
 
-        <!-- Вопросы -->
+        <!-- questions -->
         <div v-for="(q, qIndex) in quiz.questions" :key="q.id" class="border rounded p-3 space-y-2">
           <div class="flex justify-between items-center">
             <label class="font-medium">Question {{ qIndex + 1 }}</label>
@@ -204,7 +212,7 @@ const handleSubmit = async () => {
             class="w-full border px-3 py-1 rounded"
           />
 
-          <!-- Варианты ответа -->
+          <!-- options of answer -->
           <div class="space-y-1">
             <div
               v-for="(option, oIndex) in q.options"
@@ -232,7 +240,7 @@ const handleSubmit = async () => {
           </button>
         </div>
 
-        <!-- Кнопки -->
+        <!-- buttons -->
         <div class="flex justify-between pt-2">
           <button
             type="button"

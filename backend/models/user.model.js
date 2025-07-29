@@ -28,6 +28,10 @@ const userSchema = new Schema(
       required: true,
       default: 'user',
     },
+    avatar: {
+      type: String,
+      default: '',
+    },
     quizzes: [
       {
         title: String,
